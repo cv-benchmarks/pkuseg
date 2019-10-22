@@ -17,6 +17,32 @@ by EECS of Peking University.
    We achieve the state-of-the-art results on multiple datasets including Pascal VOC, Cityscapes, Pascal Context
    and ADE20K．
 
+## Implemented Papers
+- PSPNet: Pyramid Scene Parsing Network (CVPR2017)
+- DeepLabV3: Rethinking Atrous Convolution for Semantic Image Segmentation (CVPR2017)
+- DenseASPP: DenseASPP for Semantic Segmentation in Street Scenes (CVPR2018)
+
+## Performances with PKUSeg
+All the performances showed below fully reimplemented the papers' results.
+
+#### Cityscapes
+- (Single Scale Whole Image Test): Base LR 0.01, Crop Size 769
+
+| Model | Backbone | Train | Test | mIOU | BS | Iters | Scripts |
+|:--------|:---------|:------|:------|:------|:------|:------|:------|
+| [PSPNet]() | [3x3-Res101]() | train | val | 78.20 | 8 | 4W | [PSPNet]() |
+| [DeepLabV3]() | [3x3-Res101]() | train | val | 79.13 | 8 | 4W | [DeepLabV3]() |
+
+#### ADE20K
+- (Single Scale Whole Image Test): Base LR 0.02, Crop Size 520
+
+| Model | Backbone | Train | Test | mIOU | PixelACC | BS | Iters | Scripts |
+|:--------|:---------|:------|:------|:------|:------|:------|:------|:------|
+| [PSPNet]() | [3x3-Res50]() | train | val | 41.52 | 80.09 | 16 | 15W | [PSPNet]() |
+| [DeepLabv3]() | [3x3-Res50]() | train | val | 42.16 | 80.36 | 16 | 15W | [DeepLabV3]() |
+| [PSPNet]() | [3x3-Res101]() | train | val | 43.60 | 81.30 | 16 | 15W | [PSPNet]() |
+| [DeepLabv3]() | [3x3-Res101]() | train | val | 44.13 | 81.42 | 16 | 15W | [DeepLabV3]() |
+
 
 ## License
 

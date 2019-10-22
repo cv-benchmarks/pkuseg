@@ -18,9 +18,9 @@ by EECS of Peking University.
    and ADE20K．
 
 ## Implemented Papers
-- [PSPNet: Pyramid Scene Parsing Network](https://arxiv.org/pdf/1612.01105.pdf) <font color='red'>CVPR2017</font>
-- DeepLabV3: Rethinking Atrous Convolution for Semantic Image Segmentation (CVPR2017)
-- DenseASPP: DenseASPP for Semantic Segmentation in Street Scenes (CVPR2018)
+- PSPNet: Pyramid Scene Parsing Network **[CVPR2017](https://arxiv.org/pdf/1612.01105.pdf)**
+- DeepLabV3: Rethinking Atrous Convolution for Semantic Image Segmentation **[CVPR2017](https://arxiv.org/pdf/1706.05587.pdf)**
+- DenseASPP: DenseASPP for Semantic Segmentation in Street Scenes **[CVPR2018](http://openaccess.thecvf.com/content_cvpr_2018/papers/Yang_DenseASPP_for_Semantic_CVPR_2018_paper.pdf)**
 
 ## Performances with PKUSeg
 All the performances showed below fully reimplemented the papers' results.

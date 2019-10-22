@@ -36,7 +36,7 @@ All the performances showed below fully reimplemented the papers' results.
 |:--------|:---------|:------|:------|:------|:------|:------|:------|
 | [PSPNet]() | [3x3-Res101]() | train | val | 78.75 | 16 | 3W | [PSPNet]() |
 | [DeepLabV3]() | [3x3-Res101]() | train | val | 78.95 | 16 | 3W | [DeepLabV3]() |
-| [EMANet]() | [3x3-Res101]() | train | val | 79.79 | 16 | 3W | [DeepLabV3]() |
+| [EMANet]() | [3x3-Res101]() | train | val | 79.79 | 16 | 3W | [EMANet]() |
 
 #### Cityscapes
 - (Single Scale Whole Image Test): Base LR 0.01, Crop Size 769

@@ -30,7 +30,7 @@ All the performances showed below fully reimplemented the papers' results.
 
 #### PASCAL VOC
 
-- (Single Scale Whole Image Test): Base LR 0.01, Crop Size 513
+- Single Scale Whole Image Test: Base LR 0.01, Crop Size 513
 
 | Model | Backbone | Train | Test | mIOU | BS | Iters | Scripts |
 |:--------|:---------|:------|:------|:------|:------|:------|:------|
@@ -39,7 +39,8 @@ All the performances showed below fully reimplemented the papers' results.
 | [EMANet]() | [3x3-Res101]() | train | val | 79.79 | 16 | 3W | [EMANet]() |
 
 #### Cityscapes
-- (Single Scale Whole Image Test): Base LR 0.01, Crop Size 769
+
+- Single Scale Whole Image Test: Base LR 0.01, Crop Size 769
 
 | Model | Backbone | Train | Test | mIOU | BS | Iters | Scripts |
 |:--------|:---------|:------|:------|:------|:------|:------|:------|
@@ -47,7 +48,8 @@ All the performances showed below fully reimplemented the papers' results.
 | [DeepLabV3]() | [3x3-Res101]() | train | val | 79.13 | 8 | 4W | [DeepLabV3]() |
 
 #### ADE20K
-- (Single Scale Whole Image Test): Base LR 0.02, Crop Size 520
+
+- Single Scale Whole Image Test: Base LR 0.02, Crop Size 520
 
 | Model | Backbone | Train | Test | mIOU | PixelACC | BS | Iters | Scripts |
 |:--------|:---------|:------|:------|:------|:------|:------|:------|:------|

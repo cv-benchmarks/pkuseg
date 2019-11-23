@@ -2,13 +2,15 @@ import os
 
 import cv2
 import numpy as np
+from numpy import random
+
 
 __all__ = ['normalize', 'rand_resize', 'pad_border', 'rand_crop', 'rand_flip',
            'to_tensor']
 
 
 def normalize(image, label, norm_config):
-    if norm_config.get('use_rgb', False)
+    if norm_config.get('use_rgb', False):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     scale = norm_config.get('scale', 1)
@@ -21,7 +23,7 @@ def normalize(image, label, norm_config):
 
 
 def rand_resize(image, label, resize_config):
-    assert (image.shape[:2] == label.shape).all()
+    assert image.shape[:2] == label.shape
 
     min_scale = resize_config.get('min_scale', 0.5)
     max_scale = resize_config.get('max_scale', 2.0)
@@ -35,7 +37,7 @@ def rand_resize(image, label, resize_config):
 
 
 def pad_border(image, label, pad_config):
-    assert (image.shape[:2] == label.shape).all()
+    assert image.shape[:2] == label.shape
 
     crop_h = pad_config.get('crop_h', 513)
     crop_w = pad_config.get('crop_w', 513)
@@ -54,18 +56,18 @@ def pad_border(image, label, pad_config):
 
 
 def rand_crop(image, label, crop_config):
-    assert (image.shape[:2] == label.shape).all()
+    assert image.shape[:2] == label.shape
 
-    crop_h = pad_config.get('crop_h', 513)
-    crop_w = pad_config.get('crop_w', 513)
-    ignore_label = pad_config.get('ignore_label', -1)
+    crop_h = crop_config.get('crop_h', 513)
+    crop_w = crop_config.get('crop_w', 513)
+    ignore_label = crop_config.get('ignore_label', -1)
 
     h, w = label.shape
     off_h = random.randint(0, h - crop_h)
     off_w = random.randint(0, w - crop_w)
 
-    image = image[h_off: h_off+crop_h, w_off: w_off+crop_w]
-    label = label[h_off: h_off+crop_h, w_off: w_off+crop_w]
+    image = image[off_h: off_h+crop_h, off_w: off_w+crop_w]
+    label = label[off_h: off_h+crop_h, off_w: off_w+crop_w]
     return image, label
 
 

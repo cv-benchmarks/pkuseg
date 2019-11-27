@@ -53,7 +53,7 @@ class ModelBuilder(nn.Module):
         mod_name, cls_name = cls_type.resplit('.', 1)
         mod = importlib.import_module(mod_name)
         cls = getattr(mod, cls_name)
-        return cls(cls_args)
+        return cls(**cls_args)
 
     def forward(self, x):
         h, w = x.size()[-2:]

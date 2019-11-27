@@ -1,7 +1,29 @@
 import numpy as np
 
 import torch
+import torch.distributed as dist
 from torch.utils.data.sampler import Sampler
+from torch.optim.lr_scheduler import _LRScheduler
+
+
+def all_reduce(tensor, op=dist.ReduceOp.SUM, world_size=1):
+    tensor = tensor.clone()
+    dist.all_reduce(tensor, op)
+    tensor.div_(world_size)
+    return tensor
+
+
+class PolyLRScheduler(_LRScheduler):
+    def __init__(self, optimizer, power, max_iter, last_iter=-1):
+        super(PolyLRScheduler, self).__init__(optimizer, last_epoch=last_iter)
+        self.power = power
+        self.max_iter = max_iter
+
+    def get_lr(self):
+        # The 'last_epoch' variable is used as 'last_iter' indeed.
+        last_iter = self.last_epoch
+        rate = (1 - float(last_iter) / self.max_iter) ** self.power
+        return [base_lr * rate for base_lr in self.base_lrs]
 
 
 class DistributedSampler4Iter(Sampler):

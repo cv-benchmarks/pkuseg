@@ -171,7 +171,7 @@ class ResNet(nn.Module):
             x1 = self.relu(self.bn3(self.conv3(x)))
         else:
             x1 = self.relu(self.bn1(self.conv1(x)))
-        x = self.maxpool(x)
+        x = self.maxpool(x1)
 
         x2 = self.layer1(x)
         x3 = self.layer2(x2)

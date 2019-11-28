@@ -1,3 +1,60 @@
+log_dir: exps/cityscapes_resnet101_deeplab/logs
+pth_dir: exps/cityscapes_resnet101_deeplab/pths
+
 dataset:
     type: cityscapes
-    
+    args:
+        list_path: ./data/cityscapes/train.lst 
+        data_root: /mnt/lustre/share/HiLight/dataset/cityscapes
+transforms:
+    trans_types: [normalize, rand_resize, pad_border, rand_crop, rand_flip]
+    trans_args:
+        normalize:
+            mean: [104.0, 116.7, 122.7]
+            std: [1, 1, 1]
+        rand_crop:
+            crop_h: 769
+            crop_w: 769
+            ignore_index: -1
+        pad_border:
+            crop_h: 769
+            crop_w: 769
+            ignore_index: -1
+
+network:
+    num_classes: 19
+    out_planes: 512
+    encoder:
+        type: resnet.resnet50_os8
+    seg_head:
+        type: heads.ASPP
+        args:
+            in_planes: 2048
+
+auxiliary:
+    in_planes: 1024
+    out_planes: 512
+
+criterion:
+    type: ohem
+    args:
+        ignore_index: -1
+        thres: 0.7
+        min_kept: 1000000
+        aux_weight: 0.4
+
+optimizer:
+    lr: 1e-2
+    momentum: 0.9
+    weight_decay: 5e-4 
+
+scheduler:
+    power: 0.9
+    total_iter: 50000
+    last_iter: -1
+
+sampler:
+    totol_iter: 50000
+    batch_size: 1
+    last_iter: -1
+

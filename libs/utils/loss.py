@@ -4,6 +4,11 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 
 
+__dict__ = {
+    'common': CriterionDSN,
+    'ohem': CriterionOhemDSN,
+}
+
 weight = torch.FloatTensor([
     0.8373, 0.918, 0.866, 1.0345, 1.0166, 0.9969,
     0.9754, 1.0489, 0.8786, 1.0023, 0.9539, 0.9843,
@@ -58,7 +63,7 @@ class OhemCrossEntropy(nn.Module):
 
 class CriterionDSN(CrossEntropyLoss):
     def __init__(self, ignore_index=255, reduction='elementwise_mean',
-                 use_weight=False):
+                 aux_weight=0.4, use_weight=False):
         if use_weight:
             super(CriterionDSN, self).__init__(weight=weight,
                                                ignore_index=ignore_index)
@@ -66,10 +71,15 @@ class CriterionDSN(CrossEntropyLoss):
             super(CriterionDSN, self).__init__(ignore_index=ignore_index)
 
     def forward(self, preds, target):
-        loss1 = super(CriterionDSN, self).forward(preds[0], target)
-        loss2 = super(CriterionDSN, self).forward(preds[1], target)
+        loss1 = self.criterion1(preds[0], target)
+        loss = loss1
+        losses = dict(loss=loss1.item())
 
-        return loss1 + loss2 * 0.4
+        if self.aux_weight != 0. and preds[1] is not None:
+            loss2 = self.criterion2(preds[1], target)
+            loss += loss2 * self.aux_weight
+            losses.update(dict(aux_loss=loss2.item())
+        return loss, losses
 
 
 class CriterionOhemDSN(nn.Module):
@@ -77,9 +87,10 @@ class CriterionOhemDSN(nn.Module):
     DSN : We need to consider two supervision for the models.
     '''
     def __init__(self, ignore_index=255, thresh=0.7, min_kept=100000,
-                 reduction='elementwise_mean', use_weight=False):
+                 reduction='elementwise_mean', aux_weight=0.4,
+                 use_weight=False):
         super(CriterionOhemDSN, self).__init__()
-        self.ignore_index = ignore_index
+        self.aux_weight = aux_weight
         self.criterion1 = OhemCrossEntropy(ignore_index, reduction, thresh, 
                                            min_kept, use_weight)
         self.criterion2 = CrossEntropyLoss(ignore_index=ignore_index, 
@@ -87,6 +98,21 @@ class CriterionOhemDSN(nn.Module):
 
     def forward(self, preds, target):
         loss1 = self.criterion1(preds[0], target)
-        loss2 = self.criterion2(preds[1], target)
+        loss = loss1
+        losses = dict(loss=loss1.item())
 
-        return loss1 + loss2 * 0.4
+        if self.aux_weight != 0. and preds[1] is not None:
+            loss2 = self.criterion2(preds[1], target)
+            loss += loss2 * self.aux_weight
+            losses.update(dict(aux_loss=loss2.item())
+        return loss, losses
+
+
+def build_criterion(crit_config):
+    __dict__ = {
+        'common': CriterionDSN,
+        'ohem': CriterionOhemDSN,
+    }
+    crit_cls = __dict__[crit_config['type']]
+    crit = crit_cls(**crit_config.get('args', dict()))
+    return crit 

@@ -14,10 +14,12 @@ import torch.distributed as dist
 import torch.optim as optim
 from torch.utils import data
 
-from libs.datasets.cityscapes import Cityscapes
-from libs.utils.logger import Logger
-from libs.utils.loss import CriterionOhemDSN, CriterionDSN
+from libs.datasets.builder import build_dataset
 from libs.networks.builder import ModelBuilder
+from libs.utils.trainer import all_reduce, PolyLRScheduler
+from libs.utils.trainer import DistributedSampler4Iter
+from libs.utils.logger import Logger
+from libs.utils.loss import build_criterion
 
 
 try:
@@ -29,13 +31,17 @@ except ImportError:
         "Please install apex from https://www.github.com/nvidia/apex .")
 
 
-def train(rank, world_size, pth_dir, save_per_iter, criterion, train_loader,
+def train(rank, world_size, pth_dir, freq_config, criterion, train_loader,
           model, optimizer, scheduler):
+    log_freq = freq_config['log_per_iter']
+    tsb_freq = freq_config['tsb_per_iter']
+    save_freq = freq_config['save_per_iter']
+
     for iter, [images, labels, _] in enumerate(train_loader):
         images = images.cuda()
         labels = labels.cuda()
         preds = model(images)
-        loss = criterion(preds, labels)
+        loss, losses = criterion(preds, labels)
 
         optimizer.zero_grad()
         loss.backward()
@@ -44,7 +50,7 @@ def train(rank, world_size, pth_dir, save_per_iter, criterion, train_loader,
 
         reduce_loss = all_reduce_tensor(loss, world_size)
         if local_rank == 0:
-            log_iter()
+            log_iter(losses)
             if iter % save_per_iter == save_per_iter - 1:
                 Log.info('Save checkpoint at step {}'.format(iter))
                 latest_path = osp.join(pth_dir, 'latest.pth')
@@ -61,6 +67,8 @@ def train(rank, world_size, pth_dir, save_per_iter, criterion, train_loader,
 
 
 def main(cfgs):
+    Logger.init(**cfgs['logger'])
+
     local_rank = cfgs['local_rank']
     world_size = int(os.environ['WORLD_SIZE'])
     Log.info('rank: {}, world_size: {}'.format(local_rank, world_size))
@@ -71,45 +79,29 @@ def main(cfgs):
         assure_dir(log_dir)
         assure_dir(pth_dir)
 
-    Logger.init(**cfgs['logger'])
-    network = ModuleBuilder(cfgs['network'])
-    optimizer = optim.SGD(
-        filter(lambda p: p.requires_grad, network.parameters()),
-        **cfgs['optimizer'])
+    aux_config = cfgs.get('auxiliary', None)
+    network = ModuleBuilder(cfgs['network'], aux_config).cuda()
+    criterion = build_criterion(cfgs['criterion'], aux_config).cuda()
+    optimizer = optim.SGD(network.parameters(), **cfgs['optimizer'])
+    scheduler = PolyLRScheduler(optimizer, **cfgs['scheduler'])
 
+    dataset = build_dataset(**cfgs['dataset'], **cfgs['transforms'])
+    sampler = DistributedSampler4Iter(dataset, world_size=world_size, 
+                                      rank=local_rank, **cfgs['sampler'])
+    train_loader = DataLoader(dataset, sampler=sampler, **cfgs['loader'])
+
+    cudnn.benchmark = True
+    torch.manual_seed(666)
+    torch.cuda.manual_seed(666)
     torch.cuda.set_device(local_rank)
     dist.init_process_group(backend='nccl', init_method='env://')
 
-    model = DistributedDataParallel(network).cuda()
+    model = DistributedDataParallel(network)
     model = apex.parallel.convert_syncbn_model(model)
 
-    # set loss function
-    use_ce_weight = cfgs.get('use_ce_weight', False)
-    ohem_config = cfgs.get('ohem', dict())
-    ohem_config['aux_weight'] = cfgs.get('aux_loss', dict()).get('aux_weight', 0.)
-    criterion = CriterionOhemDSN(use_weight=use_ce_weight, **ohem_config)
-    criterion.cuda()
-
-    cudnn.benchmark = True
-
-    if args.world_size == 1:
-        print(model)
-
-    # this is a little different from mul-gpu traning setting in distributed training
-    # because each train_loader is a process that sample from the dataset class.
-    batch_size = args.gpu_num * args.batch_size_per_gpu
-    max_iters = args.num_steps * batch_size / args.gpu_num
-    # set data loader
-    data_set = Cityscapes(args.data_dir, args.data_list, max_iters=max_iters, crop_size=input_size,
-                  scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN,vars=IMG_VARS, RGB= args.rgb)
-
-    train_loader = data.DataLoader(
-        data_set,
-        batch_size=args.batch_size_per_gpu, shuffle=True, num_workers=args.num_workers, pin_memory=True)
-
-    print("train loader", len(train_loader))
-    # empty cuda cache
     torch.cuda.empty_cache()
+    train(local_rank, world_size, pth_dir, cfgs['frequency'], criterion, 
+          train_loader, model, optimizer, scheduler)
 
 
 if __name__ == '__main__':
@@ -121,4 +113,5 @@ if __name__ == '__main__':
     with open(args.confg, Loader=yaml.Loader) as fp:
         cfgs = yaml.load(fp)
     cfgs['local_rank'] = args.local_rank
+
     main(cfgs)
